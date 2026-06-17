@@ -1,5 +1,7 @@
 import { useState, ReactNode } from 'react';
 import { AuthContext } from './auth-context';
+import type { User, Student, Transaction, StoreItem } from './auth-context';
+import { api } from '@/lib/api';
 
 export type { UserRole, User, Student, Transaction, StoreItem } from './auth-context';
 
@@ -97,13 +99,6 @@ const storeItemsData: StoreItem[] = [
   { id: 'i8', name: 'Pizza Party Ticket', price: 100, category: 'Food', inStock: true },
 ];
 
-const mockUsers = [
-  { username: 'emma.w', pin: '1234', userId: 's1' },
-  { username: 'noah.j', pin: '1234', userId: 's2' },
-  { username: 'sophia.m', pin: '1234', userId: 's3' },
-  { username: 'finance', pin: '5678', userId: 'f1', role: 'finance' as UserRole, name: 'Finance Team' },
-  { username: 'admin', pin: '9999', userId: 'a1', role: 'admin' as UserRole, name: 'Admin User' },
-];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -111,23 +106,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>(initialTransactions);
   const [storeItems] = useState<StoreItem[]>(storeItemsData);
 
-  const login = (username: string, pin: string): boolean => {
-    const user = mockUsers.find(u => u.username === username && u.pin === pin);
-    if (user) {
-      if (user.role) {
-        setCurrentUser({ id: user.userId, username: user.username, role: user.role, name: user.name });
-      } else {
-        const student = students.find(s => s.id === user.userId);
-        if (student) {
-          setCurrentUser(student);
-        }
-      }
-      return true;
+  const login = async (username: string, password: string): Promise<void> => {
+    await api.login(username, password);
+    const apiUser = await api.me();
+    if (apiUser.role === 'student') {
+      setCurrentUser({
+        id: apiUser.id,
+        username: apiUser.username,
+        role: 'student',
+        name: apiUser.username,
+        balance: 0,
+        jobTitle: '',
+        payRate: 0,
+        savingsGoal: 0,
+      } as Student);
+    } else {
+      setCurrentUser({
+        id: apiUser.id,
+        username: apiUser.username,
+        role: apiUser.role,
+        name: apiUser.username,
+      });
     }
-    return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await api.logout().catch(() => {});
     setCurrentUser(null);
   };
 

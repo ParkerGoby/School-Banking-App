@@ -38,7 +38,7 @@ export interface StoreItem {
 
 export interface AuthContextType {
   currentUser: User | null;
-  login: (username: string, pin: string) => boolean;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   students: Student[];
   transactions: Transaction[];

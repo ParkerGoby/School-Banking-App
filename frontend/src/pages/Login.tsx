@@ -10,14 +10,16 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (login(username, pin)) {
+    try {
+      await login(username, pin);
       navigate('/dashboard');
-    } else {
-      setError('Invalid username or PIN');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid username or PIN';
+      setError(message);
       setPin('');
     }
   };
